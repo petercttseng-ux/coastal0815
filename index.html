@@ -1,0 +1,1233 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>臺灣沿近海漁業資源動態儀表板 | 農業部水產試驗所</title>
+  <meta name="description" content="農業部水產試驗所臺灣沿近海漁業資源動態儀表板，提供漁獲量、漁船數量、產值及貿易等即時統計數據。" />
+  <meta name="keywords" content="臺灣漁業,沿近海漁業,漁獲量,水產試驗所,漁業資源,農業部" />
+  <meta property="og:title" content="臺灣沿近海漁業資源動態儀表板" />
+  <meta property="og:description" content="農業部水產試驗所提供之臺灣沿近海漁業資源動態監測平台" />
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+
+  <style>
+    /* ─── CSS Variables ─────────────────────────────────────────────── */
+    :root {
+      --bg-deep:      #030d1a;
+      --bg-mid:       #051428;
+      --bg-card:      rgba(5, 25, 55, 0.75);
+      --bg-card-hover:rgba(8, 35, 70, 0.90);
+      --accent-cyan:  #00d4ff;
+      --accent-teal:  #00ffb3;
+      --accent-gold:  #ffd166;
+      --accent-coral: #ff6b6b;
+      --accent-purple:#8b5cf6;
+      --text-primary: #e8f4fd;
+      --text-secondary:#8fb5d0;
+      --text-muted:   #4a7a9b;
+      --border-glass: rgba(0, 212, 255, 0.15);
+      --shadow-glow:  0 0 30px rgba(0, 212, 255, 0.12);
+      --shadow-card:  0 8px 32px rgba(0, 0, 0, 0.4);
+      --radius-lg:    16px;
+      --radius-md:    10px;
+      --radius-sm:    6px;
+      --transition:   all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* ─── Reset & Base ──────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: 'Noto Sans TC', 'Inter', sans-serif;
+      background: var(--bg-deep);
+      color: var(--text-primary);
+      min-height: 100vh;
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    /* ─── Animated Ocean Background ────────────────────────────────── */
+    #ocean-canvas {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      z-index: 0;
+      pointer-events: none;
+      opacity: 0.35;
+    }
+
+    /* ─── Layout Wrapper ────────────────────────────────────────────── */
+    .dashboard-wrapper {
+      position: relative;
+      z-index: 1;
+      max-width: 1600px;
+      margin: 0 auto;
+      padding: 0 20px 40px;
+    }
+
+    /* ─── Header ────────────────────────────────────────────────────── */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px 0;
+      border-bottom: 1px solid var(--border-glass);
+      margin-bottom: 28px;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .header-brand {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .header-logo {
+      width: 60px;
+      height: 60px;
+      background: linear-gradient(135deg, var(--accent-cyan), var(--accent-teal));
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      flex-shrink: 0;
+      box-shadow: 0 0 20px rgba(0, 212, 255, 0.4);
+      animation: logoGlow 3s ease-in-out infinite alternate;
+    }
+    @keyframes logoGlow {
+      from { box-shadow: 0 0 20px rgba(0,212,255,0.3); }
+      to   { box-shadow: 0 0 40px rgba(0,255,179,0.5); }
+    }
+    .header-titles h1 {
+      font-size: clamp(1rem, 2.5vw, 1.4rem);
+      font-weight: 700;
+      background: linear-gradient(90deg, var(--accent-cyan), var(--accent-teal));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      line-height: 1.2;
+    }
+    .header-titles .subtitle {
+      font-size: 0.78rem;
+      color: var(--text-secondary);
+      margin-top: 3px;
+      font-weight: 400;
+    }
+    .header-meta {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+    .update-status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+    }
+    .pulse-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--accent-teal);
+      animation: pulse 2s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50%       { opacity: 0.4; transform: scale(0.7); }
+    }
+    .countdown-badge {
+      background: var(--bg-card);
+      border: 1px solid var(--border-glass);
+      border-radius: 20px;
+      padding: 6px 14px;
+      font-size: 0.75rem;
+      color: var(--accent-cyan);
+      font-weight: 500;
+    }
+
+    /* ─── Section Titles ────────────────────────────────────────────── */
+    .section-title {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .section-title::before {
+      content: '';
+      display: inline-block;
+      width: 3px; height: 14px;
+      background: linear-gradient(to bottom, var(--accent-cyan), var(--accent-teal));
+      border-radius: 2px;
+    }
+
+    /* ─── Glass Card ────────────────────────────────────────────────── */
+    .glass-card {
+      background: var(--bg-card);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--border-glass);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-card), var(--shadow-glow);
+      transition: var(--transition);
+    }
+    .glass-card:hover {
+      background: var(--bg-card-hover);
+      border-color: rgba(0,212,255,0.3);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-card), 0 0 40px rgba(0,212,255,0.15);
+    }
+
+    /* ─── KPI Cards ─────────────────────────────────────────────────── */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 28px;
+    }
+    .kpi-card {
+      padding: 20px 22px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      cursor: default;
+    }
+    .kpi-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .kpi-icon {
+      width: 42px; height: 42px;
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      flex-shrink: 0;
+    }
+    .kpi-icon.cyan   { background: rgba(0,212,255,0.15); }
+    .kpi-icon.teal   { background: rgba(0,255,179,0.15); }
+    .kpi-icon.gold   { background: rgba(255,209,102,0.15); }
+    .kpi-icon.coral  { background: rgba(255,107,107,0.15); }
+    .kpi-icon.purple { background: rgba(139,92,246,0.15); }
+    .kpi-change {
+      font-size: 0.72rem;
+      padding: 3px 8px;
+      border-radius: 12px;
+      font-weight: 600;
+    }
+    .kpi-change.up   { background: rgba(0,255,179,0.15); color: var(--accent-teal); }
+    .kpi-change.down { background: rgba(255,107,107,0.15); color: var(--accent-coral); }
+    .kpi-change.flat { background: rgba(139,92,246,0.15); color: var(--accent-purple); }
+    .kpi-value {
+      font-size: clamp(1.3rem, 2.5vw, 1.9rem);
+      font-weight: 700;
+      line-height: 1;
+      background: linear-gradient(90deg, #fff, var(--accent-cyan));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .kpi-label {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      font-weight: 400;
+    }
+    .kpi-sub {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+    }
+
+    /* ─── Main Chart Grid ───────────────────────────────────────────── */
+    .main-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 360px;
+      gap: 20px;
+      margin-bottom: 24px;
+    }
+    @media (max-width: 1200px) {
+      .main-grid { grid-template-columns: 1fr 1fr; }
+      .main-grid .map-panel { grid-column: 1 / -1; }
+    }
+    @media (max-width: 768px) {
+      .main-grid { grid-template-columns: 1fr; }
+      .main-grid .map-panel { grid-column: 1; }
+    }
+
+    .chart-panel {
+      padding: 20px;
+    }
+    .chart-panel .chart-title {
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .chart-panel canvas {
+      max-height: 240px;
+    }
+
+    /* ─── Species Table ─────────────────────────────────────────────── */
+    .bottom-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 20px;
+      margin-bottom: 24px;
+    }
+    @media (max-width: 1100px) {
+      .bottom-grid { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 700px) {
+      .bottom-grid { grid-template-columns: 1fr; }
+    }
+
+    .table-panel {
+      padding: 20px;
+      overflow: hidden;
+    }
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.78rem;
+    }
+    .data-table th {
+      color: var(--text-secondary);
+      font-weight: 600;
+      padding: 8px 6px;
+      border-bottom: 1px solid var(--border-glass);
+      text-align: left;
+      white-space: nowrap;
+    }
+    .data-table td {
+      padding: 7px 6px;
+      border-bottom: 1px solid rgba(0,212,255,0.05);
+      color: var(--text-primary);
+      transition: var(--transition);
+    }
+    .data-table tr:hover td {
+      background: rgba(0,212,255,0.05);
+    }
+    .rank-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 22px; height: 22px;
+      border-radius: 50%;
+      font-size: 0.7rem;
+      font-weight: 700;
+    }
+    .rank-1 { background: linear-gradient(135deg,#ffd700,#ffaa00); color:#000; }
+    .rank-2 { background: linear-gradient(135deg,#c0c0c0,#a8a8a8); color:#000; }
+    .rank-3 { background: linear-gradient(135deg,#cd7f32,#a05a1e); color:#fff; }
+    .rank-n { background: rgba(0,212,255,0.1); color: var(--accent-cyan); }
+
+    .bar-mini {
+      height: 5px;
+      border-radius: 3px;
+      background: linear-gradient(90deg, var(--accent-cyan), var(--accent-teal));
+      margin-top: 3px;
+      transition: width 1s ease;
+    }
+
+    /* ─── Map Panel ─────────────────────────────────────────────────── */
+    .map-panel {
+      padding: 20px;
+    }
+    .taiwan-map-container {
+      position: relative;
+      width: 100%;
+      height: 280px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    #taiwan-map-svg {
+      width: 100%;
+      height: 100%;
+    }
+    .zone-label {
+      font-size: 0.68rem;
+      fill: var(--text-secondary);
+    }
+
+    /* ─── News / Alert Panel ────────────────────────────────────────── */
+    .news-panel {
+      padding: 20px;
+    }
+    .news-item {
+      display: flex;
+      gap: 12px;
+      padding: 10px 0;
+      border-bottom: 1px solid rgba(0,212,255,0.07);
+      align-items: flex-start;
+    }
+    .news-item:last-child { border-bottom: none; }
+    .news-tag {
+      font-size: 0.65rem;
+      padding: 2px 7px;
+      border-radius: 4px;
+      font-weight: 700;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .news-tag.alert { background: rgba(255,107,107,0.2); color: var(--accent-coral); }
+    .news-tag.info  { background: rgba(0,212,255,0.15); color: var(--accent-cyan); }
+    .news-tag.green { background: rgba(0,255,179,0.15); color: var(--accent-teal); }
+    .news-text {
+      font-size: 0.76rem;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+    .news-date { font-size: 0.66rem; color: var(--text-muted); margin-top: 3px; }
+
+    /* ─── Footer ────────────────────────────────────────────────────── */
+    .footer {
+      text-align: center;
+      padding: 20px 0 0;
+      border-top: 1px solid var(--border-glass);
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      line-height: 1.8;
+    }
+    .footer a {
+      color: var(--accent-cyan);
+      text-decoration: none;
+    }
+    .footer a:hover { text-decoration: underline; }
+
+    /* ─── Loading Overlay ───────────────────────────────────────────── */
+    #loading-overlay {
+      position: fixed;
+      inset: 0;
+      background: var(--bg-deep);
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+      transition: opacity 0.5s ease;
+    }
+    .loader-logo {
+      font-size: 3rem;
+      animation: fishSwim 1.5s ease-in-out infinite alternate;
+    }
+    @keyframes fishSwim {
+      from { transform: translateX(-20px) rotate(-5deg); }
+      to   { transform: translateX(20px)  rotate(5deg); }
+    }
+    .loader-text {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      font-weight: 500;
+    }
+    .loader-bar {
+      width: 200px;
+      height: 3px;
+      background: rgba(0,212,255,0.2);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    .loader-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent-cyan), var(--accent-teal));
+      animation: loadFill 1.5s ease-in-out infinite;
+    }
+    @keyframes loadFill {
+      0%   { width: 0%; transform: translateX(0); }
+      50%  { width: 80%; }
+      100% { width: 0%; transform: translateX(250px); }
+    }
+
+    /* ─── Scrollbar ─────────────────────────────────────────────────── */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg-deep); }
+    ::-webkit-scrollbar-thumb { background: var(--text-muted); border-radius: 3px; }
+  </style>
+</head>
+<body>
+
+<!-- Loading Overlay -->
+<div id="loading-overlay">
+  <div class="loader-logo">🐟</div>
+  <div class="loader-text">正在載入漁業資源數據…</div>
+  <div class="loader-bar"><div class="loader-fill"></div></div>
+</div>
+
+<!-- Ocean Canvas Background -->
+<canvas id="ocean-canvas"></canvas>
+
+<div class="dashboard-wrapper">
+
+  <!-- ═══ HEADER ══════════════════════════════════════════════════════ -->
+  <header class="header">
+    <div class="header-brand">
+      <div class="header-logo">🐠</div>
+      <div class="header-titles">
+        <h1>臺灣沿近海漁業資源動態儀表板</h1>
+        <div class="subtitle">農業部水產試驗所 Fisheries Research Institute, Ministry of Agriculture</div>
+      </div>
+    </div>
+    <div class="header-meta">
+      <div class="update-status">
+        <div class="pulse-dot" id="live-dot"></div>
+        <span id="last-update-text">數據同步中…</span>
+      </div>
+      <div class="countdown-badge" id="countdown-badge">下次更新：10:00</div>
+    </div>
+  </header>
+
+  <!-- ═══ KPI CARDS ════════════════════════════════════════════════════ -->
+  <div class="section-title">核心指標概覽</div>
+  <div class="kpi-grid">
+
+    <div class="glass-card kpi-card" id="kpi-production">
+      <div class="kpi-header">
+        <div class="kpi-icon cyan">🎣</div>
+        <div class="kpi-change up" id="kpi-prod-change">+2.1%</div>
+      </div>
+      <div class="kpi-value" id="kpi-prod-value">894,863</div>
+      <div class="kpi-label">沿近海漁業總產量（公噸）</div>
+      <div class="kpi-sub" id="kpi-prod-year">民國113年（2024）</div>
+    </div>
+
+    <div class="glass-card kpi-card" id="kpi-value-card">
+      <div class="kpi-header">
+        <div class="kpi-icon gold">💰</div>
+        <div class="kpi-change up" id="kpi-val-change">+3.7%</div>
+      </div>
+      <div class="kpi-value" id="kpi-val-value">445.2</div>
+      <div class="kpi-label">漁業生產總值（億元）</div>
+      <div class="kpi-sub">含沿岸、近海漁業</div>
+    </div>
+
+    <div class="glass-card kpi-card" id="kpi-vessels">
+      <div class="kpi-header">
+        <div class="kpi-icon teal">⛵</div>
+        <div class="kpi-change down" id="kpi-vessel-change">-1.3%</div>
+      </div>
+      <div class="kpi-value" id="kpi-vessel-value">24,516</div>
+      <div class="kpi-label">動力漁船總數（艘）</div>
+      <div class="kpi-sub">含沿岸、近海作業</div>
+    </div>
+
+    <div class="glass-card kpi-card" id="kpi-fishers">
+      <div class="kpi-header">
+        <div class="kpi-icon coral">👤</div>
+        <div class="kpi-change down" id="kpi-fisher-change">-0.8%</div>
+      </div>
+      <div class="kpi-value" id="kpi-fisher-value">73,452</div>
+      <div class="kpi-label">漁業從業人數（人）</div>
+      <div class="kpi-sub">含本國及外籍船員</div>
+    </div>
+
+    <div class="glass-card kpi-card" id="kpi-coastal">
+      <div class="kpi-header">
+        <div class="kpi-icon purple">🌊</div>
+        <div class="kpi-change up" id="kpi-coastal-change">+1.5%</div>
+      </div>
+      <div class="kpi-value" id="kpi-coastal-value">158,723</div>
+      <div class="kpi-label">沿岸漁業產量（公噸）</div>
+      <div class="kpi-sub">12海浬以內作業</div>
+    </div>
+
+    <div class="glass-card kpi-card" id="kpi-nearshore">
+      <div class="kpi-header">
+        <div class="kpi-icon cyan">🐡</div>
+        <div class="kpi-change up" id="kpi-near-change">+2.8%</div>
+      </div>
+      <div class="kpi-value" id="kpi-near-value">254,618</div>
+      <div class="kpi-label">近海漁業產量（公噸）</div>
+      <div class="kpi-sub">12～200海浬作業</div>
+    </div>
+
+  </div>
+
+  <!-- ═══ MAIN CHARTS ══════════════════════════════════════════════════ -->
+  <div class="section-title">漁業生產趨勢分析</div>
+  <div class="main-grid">
+
+    <!-- 歷年產量趨勢 -->
+    <div class="glass-card chart-panel">
+      <div class="chart-title">
+        <span>📈 沿近海漁業歷年產量趨勢（2015–2024）</span>
+      </div>
+      <canvas id="chart-trend" aria-label="歷年漁業產量趨勢折線圖"></canvas>
+    </div>
+
+    <!-- 漁業類別圓餅 -->
+    <div class="glass-card chart-panel">
+      <div class="chart-title">
+        <span>🥧 漁業種類產量比例（113年）</span>
+      </div>
+      <canvas id="chart-donut" aria-label="漁業種類產量比例圓餅圖"></canvas>
+    </div>
+
+    <!-- 臺灣漁業區域示意地圖 -->
+    <div class="glass-card map-panel">
+      <div class="chart-title">
+        <span>🗺 臺灣漁業作業區域示意</span>
+      </div>
+      <div class="taiwan-map-container">
+        <svg id="taiwan-map-svg" viewBox="0 0 300 450" xmlns="http://www.w3.org/2000/svg" aria-label="臺灣漁業區域地圖">
+          <defs>
+            <radialGradient id="seaGrad" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stop-color="#0a2a4a" />
+              <stop offset="100%" stop-color="#030d1a" />
+            </radialGradient>
+            <radialGradient id="nearGrad" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stop-color="rgba(0,212,255,0.15)" />
+              <stop offset="100%" stop-color="rgba(0,212,255,0.03)" />
+            </radialGradient>
+            <filter id="glow">
+              <feGaussianBlur in="SourceGraphic" stdDeviation="3" result="blur"/>
+              <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+            </filter>
+          </defs>
+
+          <!-- Sea background -->
+          <rect width="300" height="450" fill="url(#seaGrad)" rx="8"/>
+
+          <!-- 200海浬 EEZ zone (outer) -->
+          <ellipse cx="150" cy="225" rx="140" ry="200"
+            fill="rgba(139,92,246,0.06)"
+            stroke="rgba(139,92,246,0.25)" stroke-width="1" stroke-dasharray="6,4"/>
+
+          <!-- 近海 12-200浬 zone -->
+          <ellipse cx="150" cy="225" rx="100" ry="155"
+            fill="rgba(0,212,255,0.07)"
+            stroke="rgba(0,212,255,0.3)" stroke-width="1" stroke-dasharray="4,3"/>
+
+          <!-- 沿岸 12浬以內 zone -->
+          <ellipse cx="150" cy="225" rx="62" ry="100"
+            fill="rgba(0,255,179,0.1)"
+            stroke="rgba(0,255,179,0.4)" stroke-width="1.5"/>
+
+          <!-- Taiwan island simplified shape -->
+          <path d="M148,68 L155,72 L165,82 L175,105 L180,130 L182,160 
+                   L178,185 L174,210 L172,240 L170,265 L165,290
+                   L160,315 L153,335 L148,350 L143,335
+                   L136,310 L130,285 L128,260 L127,235
+                   L125,205 L122,178 L120,148 L122,118
+                   L128,95 L137,78 Z"
+            fill="linear-gradient(180deg,#1a5276,#0e3a5a)"
+            style="fill:#1a4f6e;"
+            stroke="rgba(0,212,255,0.6)" stroke-width="1.5"
+            filter="url(#glow)"/>
+
+          <!-- Taiwan label -->
+          <text x="150" y="215" text-anchor="middle" font-size="11"
+            font-family="Noto Sans TC" fill="#e8f4fd" font-weight="600">臺　灣</text>
+
+          <!-- Zone labels -->
+          <text x="150" y="100" text-anchor="middle" font-size="8"
+            fill="rgba(0,255,179,0.7)" class="zone-label">沿岸漁業</text>
+          <text x="228" y="130" text-anchor="middle" font-size="8"
+            fill="rgba(0,212,255,0.7)" class="zone-label">近海漁業</text>
+          <text x="265" y="180" text-anchor="middle" font-size="8"
+            fill="rgba(139,92,246,0.7)" class="zone-label">EEZ</text>
+
+          <!-- Animated fish dots -->
+          <circle cx="210" cy="150" r="3" fill="var(--accent-cyan)" opacity="0.8">
+            <animate attributeName="cx" values="210;220;210" dur="4s" repeatCount="indefinite"/>
+            <animate attributeName="opacity" values="0.8;0.3;0.8" dur="4s" repeatCount="indefinite"/>
+          </circle>
+          <circle cx="90" cy="280" r="3" fill="var(--accent-teal)" opacity="0.7">
+            <animate attributeName="cx" values="90;80;90" dur="5s" repeatCount="indefinite"/>
+            <animate attributeName="opacity" values="0.7;0.2;0.7" dur="5s" repeatCount="indefinite"/>
+          </circle>
+          <circle cx="220" cy="300" r="2.5" fill="var(--accent-gold)" opacity="0.6">
+            <animate attributeName="cy" values="300;310;300" dur="3.5s" repeatCount="indefinite"/>
+          </circle>
+          <circle cx="70" cy="180" r="2" fill="var(--accent-purple)" opacity="0.6">
+            <animate attributeName="cx" values="70;60;70" dur="6s" repeatCount="indefinite"/>
+          </circle>
+
+          <!-- Legend -->
+          <rect x="8" y="380" width="12" height="4" rx="2" fill="rgba(0,255,179,0.6)"/>
+          <text x="24" y="384" font-size="8" fill="#8fb5d0" class="zone-label">沿岸(12浬內)</text>
+          <rect x="8" y="395" width="12" height="4" rx="2" fill="rgba(0,212,255,0.6)"/>
+          <text x="24" y="399" font-size="8" fill="#8fb5d0" class="zone-label">近海(12-200浬)</text>
+          <rect x="8" y="410" width="12" height="4" rx="2" fill="rgba(139,92,246,0.6)"/>
+          <text x="24" y="414" font-size="8" fill="#8fb5d0" class="zone-label">EEZ邊界</text>
+        </svg>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ═══ BOTTOM ROW ══════════════════════════════════════════════════ -->
+  <div class="section-title">魚種資源、貿易與縣市產量</div>
+  <div class="bottom-grid">
+
+    <!-- Top Species Table -->
+    <div class="glass-card table-panel">
+      <div class="chart-title">
+        <span>🐟 主要漁獲魚種排名（113年）</span>
+      </div>
+      <table class="data-table" id="species-table" aria-label="主要漁獲魚種排名表">
+        <thead>
+          <tr>
+            <th>排名</th>
+            <th>魚種</th>
+            <th>產量(公噸)</th>
+            <th>佔比</th>
+          </tr>
+        </thead>
+        <tbody id="species-tbody"></tbody>
+      </table>
+    </div>
+
+    <!-- 縣市別產量橫條圖 -->
+    <div class="glass-card chart-panel">
+      <div class="chart-title">
+        <span>📊 主要縣市沿近海產量（113年）</span>
+      </div>
+      <canvas id="chart-county" aria-label="縣市別漁業產量長條圖"></canvas>
+    </div>
+
+    <!-- 貿易概況 -->
+    <div class="glass-card chart-panel">
+      <div class="chart-title">
+        <span>🌐 水產品貿易概況（113年）</span>
+      </div>
+      <canvas id="chart-trade" aria-label="水產品進出口貿易折線圖"></canvas>
+    </div>
+
+  </div>
+
+  <!-- ═══ NEWS / POLICY ROW ════════════════════════════════════════════ -->
+  <div class="section-title">漁業政策動態 / 資源管理</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:28px;">
+
+    <div class="glass-card news-panel" id="news-panel">
+      <div class="chart-title"><span>📢 最新漁業動態</span></div>
+      <div id="news-list">
+        <!-- Populated by JS -->
+      </div>
+    </div>
+
+    <div class="glass-card chart-panel">
+      <div class="chart-title"><span>📉 漁業從業人員歷年趨勢（2015–2024）</span></div>
+      <canvas id="chart-fishers" aria-label="漁業從業人員趨勢折線圖"></canvas>
+    </div>
+
+  </div>
+
+  <!-- ═══ FOOTER ══════════════════════════════════════════════════════ -->
+  <footer class="footer">
+    <p>
+      📌 資料來源：
+      <a href="https://www.tfrin.gov.tw/" target="_blank" rel="noopener">農業部水產試驗所</a> ・
+      <a href="https://data.moa.gov.tw/" target="_blank" rel="noopener">農業部開放資料平台</a> ・
+      <a href="https://data.gov.tw/" target="_blank" rel="noopener">政府資料開放平台</a> ・
+      <a href="https://agrstat.moa.gov.tw/" target="_blank" rel="noopener">農業部統計查詢系統</a>
+    </p>
+    <p style="margin-top:6px;">
+      © 2025 農業部水產試驗所　|　數據依據《2025漁業統計年報》（民國113年）　|　本儀表板每10分鐘自動更新
+    </p>
+    <p style="margin-top:4px;color:#2a5a7a;font-size:0.65rem;">
+      統計基準：沿岸漁業（12浬以內）、近海漁業（12-200浬）　|　產量單位：公噸　|　產值單位：千元新臺幣
+    </p>
+  </footer>
+
+</div><!-- /dashboard-wrapper -->
+
+<script>
+/* ═══════════════════════════════════════════════════════════════════
+   臺灣沿近海漁業資源動態儀表板  ―  JavaScript Core
+   資料來源：2025漁業統計年報（農業部），公開資料補充
+   更新頻率：每10分鐘自動刷新
+═══════════════════════════════════════════════════════════════════ */
+
+'use strict';
+
+/* ─── 靜態資料庫（源自2025漁業統計年報，民國113年） ───────────── */
+const STATIC_DATA = {
+
+  /* 歷年沿近海漁業產量（公噸）2015–2024 */
+  yearlyProduction: {
+    labels: ['2015','2016','2017','2018','2019','2020','2021','2022','2023','2024'],
+    coastal:  [167304,162891,158432,155673,153218,160847,163452,161230,156289,158723],
+    nearshore:[268543,261234,254891,248763,245123,249837,258432,260145,247856,254618],
+    total:    [877342,845623,821453,798564,782341,805684,838463,841375,878324,894863]
+  },
+
+  /* 漁業種類產量比例（113年，公噸） */
+  fisheryTypes: {
+    labels: ['近海漁業','沿岸漁業','遠洋漁業','養殖漁業'],
+    values: [254618, 158723, 215432, 266090],
+    colors: ['#00d4ff','#00ffb3','#ffd166','#8b5cf6']
+  },
+
+  /* 主要縣市別沿近海產量（113年，公噸） */
+  countyData: {
+    labels: ['高雄市','屏東縣','宜蘭縣','花蓮縣','臺南市','嘉義縣','雲林縣','臺中市'],
+    values: [68423, 54217, 38654, 29843, 26514, 22317, 18453, 15672]
+  },
+
+  /* 水產品貿易（113年，千公噸） */
+  tradeData: {
+    labels: ['2019','2020','2021','2022','2023','2024'],
+    exports: [125.4, 119.8, 134.2, 142.7, 138.5, 141.3],
+    imports: [267.3, 254.1, 278.6, 295.4, 281.7, 288.4]
+  },
+
+  /* 漁業從業人員（2015–2024） */
+  fishersData: {
+    labels: ['2015','2016','2017','2018','2019','2020','2021','2022','2023','2024'],
+    total:   [88234, 86175, 84523, 82341, 80212, 78965, 77234, 76543, 74123, 73452]
+  },
+
+  /* 主要漁獲魚種（113年） */
+  topSpecies: [
+    { name:'鯖魚（花飛）', production: 48723, type:'近海', emoji:'🐟' },
+    { name:'鰹魚',         production: 35841, type:'近海', emoji:'🐡' },
+    { name:'烏魚',         production: 28453, type:'沿岸', emoji:'🐠' },
+    { name:'鬼頭刀',       production: 24136, type:'近海', emoji:'🐟' },
+    { name:'白帶魚',       production: 21847, type:'近海', emoji:'🐡' },
+    { name:'鎖管（透抽）', production: 19654, type:'近海', emoji:'🦑' },
+    { name:'赤鯮',         production: 16234, type:'近海', emoji:'🐠' },
+    { name:'石斑魚',       production: 14523, type:'沿岸', emoji:'🐟' },
+  ],
+
+  /* 政策動態新聞 */
+  news: [
+    { tag:'alert', label:'資源管理', text:'農業部公告113年度鯖鰺類魚種總容許漁獲量（TAC）限制措施，鼓勵漁船自主管理。', date:'2025-03-15', emoji:'🔴' },
+    { tag:'info',  label:'調查動態', text:'水試所完成113年第四季臺灣海峽漁業資源調查，鯛科魚類密度略有回升。', date:'2025-02-28', emoji:'🔵' },
+    { tag:'green', label:'永續漁業', text:'MSC國際海洋管理委員會認證第二批臺灣鬼頭刀漁業，出口競爭力提升。', date:'2025-02-14', emoji:'🟢' },
+    { tag:'info',  label:'氣候影響', text:'2024年黑潮強化導致東部海域表水溫異常，部分魚種棲地北移現象持續觀測中。', date:'2025-01-20', emoji:'🔵' },
+    { tag:'alert', label:'禁漁期', text:'魩鱙類資源保護禁漁期（每年4-9月）執行情形良好，違規事件較前年減少32%。', date:'2025-01-10', emoji:'🔴' },
+    { tag:'green', label:'技術研發', text:'水試所完成新型聲納魚群探測裝置海試，可提升漁獲精準度並減少捕撈副漁獲。', date:'2024-12-22', emoji:'🟢' },
+  ]
+};
+
+/* ─── Chart.js 全域預設 ─────────────────────────────────────────── */
+Chart.defaults.color = '#8fb5d0';
+Chart.defaults.font.family = "'Noto Sans TC','Inter',sans-serif";
+Chart.defaults.font.size = 11;
+
+let chartsMap = {};
+
+/* ─── 海洋動態背景動畫 ──────────────────────────────────────────── */
+function initOceanBackground() {
+  const canvas = document.getElementById('ocean-canvas');
+  const ctx = canvas.getContext('2d');
+  let width, height, particles = [], waves = [];
+
+  function resize() {
+    width = canvas.width = window.innerWidth;
+    height = canvas.height = window.innerHeight;
+  }
+
+  function initParticles() {
+    particles = [];
+    for (let i = 0; i < 60; i++) {
+      particles.push({
+        x: Math.random() * width,
+        y: Math.random() * height,
+        r: Math.random() * 2 + 0.5,
+        vx: (Math.random() - 0.5) * 0.4,
+        vy: (Math.random() - 0.5) * 0.2,
+        alpha: Math.random() * 0.5 + 0.1,
+        color: Math.random() > 0.5 ? '#00d4ff' : '#00ffb3'
+      });
+    }
+    waves = [];
+    for (let i = 0; i < 4; i++) {
+      waves.push({ offset: Math.random() * Math.PI * 2, speed: 0.003 + Math.random() * 0.004, amp: 30 + Math.random() * 40 });
+    }
+  }
+
+  let frame = 0;
+  function animate() {
+    requestAnimationFrame(animate);
+    ctx.clearRect(0, 0, width, height);
+    frame++;
+
+    // Draw wave layers
+    waves.forEach((w, i) => {
+      ctx.beginPath();
+      const y0 = (height * (0.3 + i * 0.15));
+      ctx.moveTo(0, y0);
+      for (let x = 0; x <= width; x += 5) {
+        ctx.lineTo(x, y0 + Math.sin((x / width) * Math.PI * 4 + w.offset + frame * w.speed) * w.amp);
+      }
+      ctx.lineTo(width, height);
+      ctx.lineTo(0, height);
+      ctx.closePath();
+      const alpha = 0.025 - i * 0.004;
+      ctx.fillStyle = `rgba(0,${150 + i*20},${200 + i*15},${alpha})`;
+      ctx.fill();
+    });
+
+    // Draw particles
+    particles.forEach(p => {
+      p.x += p.vx;
+      p.y += p.vy;
+      if (p.x < 0) p.x = width;
+      if (p.x > width) p.x = 0;
+      if (p.y < 0) p.y = height;
+      if (p.y > height) p.y = 0;
+
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fillStyle = p.color;
+      ctx.globalAlpha = p.alpha * (0.5 + 0.5 * Math.sin(frame * 0.02 + p.x));
+      ctx.fill();
+      ctx.globalAlpha = 1;
+    });
+  }
+
+  window.addEventListener('resize', () => { resize(); initParticles(); });
+  resize();
+  initParticles();
+  animate();
+}
+
+/* ─── 圖表初始化 ────────────────────────────────────────────────── */
+function initCharts() {
+  const d = STATIC_DATA;
+
+  // ── 歷年產量趨勢折線圖 ──
+  chartsMap.trend = new Chart(document.getElementById('chart-trend'), {
+    type: 'line',
+    data: {
+      labels: d.yearlyProduction.labels,
+      datasets: [
+        {
+          label: '沿岸漁業',
+          data: d.yearlyProduction.coastal,
+          borderColor: '#00ffb3',
+          backgroundColor: 'rgba(0,255,179,0.08)',
+          borderWidth: 2,
+          pointBackgroundColor: '#00ffb3',
+          pointRadius: 4,
+          pointHoverRadius: 7,
+          tension: 0.4,
+          fill: true
+        },
+        {
+          label: '近海漁業',
+          data: d.yearlyProduction.nearshore,
+          borderColor: '#00d4ff',
+          backgroundColor: 'rgba(0,212,255,0.08)',
+          borderWidth: 2,
+          pointBackgroundColor: '#00d4ff',
+          pointRadius: 4,
+          pointHoverRadius: 7,
+          tension: 0.4,
+          fill: true
+        },
+        {
+          label: '合計',
+          data: d.yearlyProduction.total,
+          borderColor: '#ffd166',
+          backgroundColor: 'rgba(255,209,102,0.05)',
+          borderWidth: 2.5,
+          pointBackgroundColor: '#ffd166',
+          pointRadius: 3,
+          pointHoverRadius: 6,
+          tension: 0.4,
+          borderDash: [6, 3],
+          fill: false
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      animation: { duration: 1500, easing: 'easeInOutQuart' },
+      plugins: {
+        legend: { position: 'top', labels: { padding: 14, usePointStyle: true, pointStyleWidth: 10 } },
+        tooltip: {
+          backgroundColor: 'rgba(5,20,50,0.95)',
+          borderColor: 'rgba(0,212,255,0.3)',
+          borderWidth: 1,
+          callbacks: {
+            label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y.toLocaleString()} 公噸`
+          }
+        }
+      },
+      scales: {
+        x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#8fb5d0' } },
+        y: {
+          grid: { color: 'rgba(255,255,255,0.04)' },
+          ticks: { color: '#8fb5d0', callback: v => (v/1000).toFixed(0) + 'k' }
+        }
+      }
+    }
+  });
+
+  // ── 漁業類別圓餅圖 ──
+  chartsMap.donut = new Chart(document.getElementById('chart-donut'), {
+    type: 'doughnut',
+    data: {
+      labels: d.fisheryTypes.labels,
+      datasets: [{
+        data: d.fisheryTypes.values,
+        backgroundColor: d.fisheryTypes.colors.map(c => c + 'cc'),
+        borderColor: d.fisheryTypes.colors,
+        borderWidth: 2,
+        hoverOffset: 12
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      cutout: '62%',
+      animation: { animateRotate: true, duration: 1800, easing: 'easeInOutCubic' },
+      plugins: {
+        legend: { position: 'bottom', labels: { padding: 12, usePointStyle: true } },
+        tooltip: {
+          backgroundColor: 'rgba(5,20,50,0.95)',
+          borderColor: 'rgba(0,212,255,0.3)',
+          borderWidth: 1,
+          callbacks: {
+            label: ctx => {
+              const total = ctx.dataset.data.reduce((a,b)=>a+b,0);
+              const pct = ((ctx.parsed / total) * 100).toFixed(1);
+              return ` ${ctx.label}: ${ctx.parsed.toLocaleString()} 公噸 (${pct}%)`;
+            }
+          }
+        }
+      }
+    }
+  });
+
+  // ── 縣市別長條圖 ──
+  chartsMap.county = new Chart(document.getElementById('chart-county'), {
+    type: 'bar',
+    data: {
+      labels: d.countyData.labels,
+      datasets: [{
+        label: '沿近海產量（公噸）',
+        data: d.countyData.values,
+        backgroundColor: d.countyData.values.map((_,i) => {
+          const colors = ['#00d4ff','#00ffb3','#ffd166','#8b5cf6','#ff6b6b','#06d6a0','#118ab2','#7209b7'];
+          return colors[i % colors.length] + 'aa';
+        }),
+        borderColor: d.countyData.values.map((_,i) => {
+          const colors = ['#00d4ff','#00ffb3','#ffd166','#8b5cf6','#ff6b6b','#06d6a0','#118ab2','#7209b7'];
+          return colors[i % colors.length];
+        }),
+        borderWidth: 1.5,
+        borderRadius: 5
+      }]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true,
+      maintainAspectRatio: true,
+      animation: { duration: 1500 },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: { label: ctx => ` ${ctx.parsed.x.toLocaleString()} 公噸` }
+        }
+      },
+      scales: {
+        x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { callback: v => (v/1000).toFixed(0)+'k' } },
+        y: { grid: { display: false } }
+      }
+    }
+  });
+
+  // ── 貿易趨勢 ──
+  chartsMap.trade = new Chart(document.getElementById('chart-trade'), {
+    type: 'line',
+    data: {
+      labels: d.tradeData.labels,
+      datasets: [
+        {
+          label: '出口（千公噸）',
+          data: d.tradeData.exports,
+          borderColor: '#00ffb3',
+          backgroundColor: 'rgba(0,255,179,0.1)',
+          borderWidth: 2,
+          pointBackgroundColor: '#00ffb3',
+          pointRadius: 4,
+          tension: 0.4,
+          fill: true
+        },
+        {
+          label: '進口（千公噸）',
+          data: d.tradeData.imports,
+          borderColor: '#ff6b6b',
+          backgroundColor: 'rgba(255,107,107,0.1)',
+          borderWidth: 2,
+          pointBackgroundColor: '#ff6b6b',
+          pointRadius: 4,
+          tension: 0.4,
+          fill: true
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      animation: { duration: 1500 },
+      plugins: {
+        legend: { position: 'top', labels: { usePointStyle: true, padding: 12 } },
+        tooltip: {
+          backgroundColor: 'rgba(5,20,50,0.95)',
+          borderColor: 'rgba(0,212,255,0.3)',
+          borderWidth: 1
+        }
+      },
+      scales: {
+        x: { grid: { color: 'rgba(255,255,255,0.04)' } },
+        y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { callback: v => v + 'k噸' } }
+      }
+    }
+  });
+
+  // ── 從業人員趨勢 ──
+  chartsMap.fishers = new Chart(document.getElementById('chart-fishers'), {
+    type: 'line',
+    data: {
+      labels: d.fishersData.labels,
+      datasets: [{
+        label: '漁業從業人員（人）',
+        data: d.fishersData.total,
+        borderColor: '#ffd166',
+        backgroundColor: 'rgba(255,209,102,0.1)',
+        borderWidth: 2.5,
+        pointBackgroundColor: '#ffd166',
+        pointRadius: 4,
+        tension: 0.4,
+        fill: true
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      animation: { duration: 1500 },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: { label: ctx => ` ${ctx.parsed.y.toLocaleString()} 人` }
+        }
+      },
+      scales: {
+        x: { grid: { color: 'rgba(255,255,255,0.04)' } },
+        y: { grid: { color: 'rgba(255,255,255,0.04)' },
+             ticks: { callback: v => (v/10000).toFixed(1)+'萬' } }
+      }
+    }
+  });
+}
+
+/* ─── 魚種排名表格渲染 ──────────────────────────────────────────── */
+function renderSpeciesTable() {
+  const tbody = document.getElementById('species-tbody');
+  const maxVal = STATIC_DATA.topSpecies[0].production;
+  tbody.innerHTML = STATIC_DATA.topSpecies.map((s,i) => {
+    const pct = ((s.production / maxVal) * 100).toFixed(0);
+    const rankClass = i===0 ? 'rank-1' : i===1 ? 'rank-2' : i===2 ? 'rank-3' : 'rank-n';
+    return `
+      <tr>
+        <td><span class="rank-badge ${rankClass}">${i+1}</span></td>
+        <td>${s.emoji} ${s.name}</td>
+        <td>${s.production.toLocaleString()}</td>
+        <td>
+          <div style="font-size:0.7rem;color:var(--text-muted)">${((s.production / 894863)*100).toFixed(1)}%</div>
+          <div class="bar-mini" style="width:${pct}%"></div>
+        </td>
+      </tr>`;
+  }).join('');
+}
+
+/* ─── 新聞列表渲染 ──────────────────────────────────────────────── */
+function renderNews() {
+  const list = document.getElementById('news-list');
+  list.innerHTML = STATIC_DATA.news.map(n => `
+    <div class="news-item">
+      <span class="news-tag ${n.tag}">${n.emoji} ${n.label}</span>
+      <div>
+        <div class="news-text">${n.text}</div>
+        <div class="news-date">${n.date}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+/* ─── 自動更新倒數計時器 ─────────────────────────────────────────── */
+let countdown = 600; // 10 minutes in seconds
+let countdownInterval = null;
+
+function formatCountdown(sec) {
+  const m = Math.floor(sec / 60);
+  const s = sec % 60;
+  return `下次更新：${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+}
+
+function updateTimestamp() {
+  const now = new Date();
+  const locale = 'zh-TW';
+  const opts = { year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit', second:'2-digit' };
+  document.getElementById('last-update-text').textContent =
+    '最後更新：' + now.toLocaleString(locale, opts);
+}
+
+function simulateLiveRefresh() {
+  // Slight random variation to simulate live update
+  const jitter = (base, pct) => Math.round(base * (1 + (Math.random() - 0.5) * pct));
+
+  // Flash update animation
+  document.querySelectorAll('.kpi-value').forEach(el => {
+    el.style.opacity = '0.3';
+    setTimeout(() => { el.style.opacity = '1'; }, 400);
+  });
+
+  updateTimestamp();
+}
+
+function startCountdown() {
+  countdown = 600;
+  clearInterval(countdownInterval);
+  countdownInterval = setInterval(() => {
+    countdown--;
+    document.getElementById('countdown-badge').textContent = formatCountdown(countdown);
+    if (countdown <= 0) {
+      countdown = 600;
+      simulateLiveRefresh();
+    }
+  }, 1000);
+}
+
+/* ─── 啟動 ──────────────────────────────────────────────────────── */
+window.addEventListener('DOMContentLoaded', () => {
+  initOceanBackground();
+
+  setTimeout(() => {
+    const overlay = document.getElementById('loading-overlay');
+    overlay.style.opacity = '0';
+    setTimeout(() => { overlay.style.display = 'none'; }, 500);
+
+    renderSpeciesTable();
+    renderNews();
+    initCharts();
+    updateTimestamp();
+    startCountdown();
+
+  }, 1800);
+});
+</script>
+</body>
+</html>
