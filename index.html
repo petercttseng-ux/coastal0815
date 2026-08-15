@@ -596,6 +596,17 @@
     .bar-yellow { background:linear-gradient(90deg,#f59e0b,#ffd166); }
     .bar-red    { background:linear-gradient(90deg,#ef4444,#ff6b6b); }
     .bar-purple { background:linear-gradient(90deg,#8b5cf6,#a78bfa); }
+    /* ── Species trend chart ── */
+    .block-title.trend { color:var(--accent-purple); }
+    .sp-chart-wrap {
+      position:relative; height:148px; margin-top:6px;
+      background:rgba(0,0,0,0.18); border-radius:8px; padding:6px 8px 4px;
+      border:1px solid rgba(139,92,246,0.12);
+    }
+    .sp-chart-note {
+      font-size:0.58rem; color:var(--text-muted); text-align:right;
+      margin-top:3px; opacity:0.7;
+    }
   </style>
 </head>
 <body>
@@ -1414,55 +1425,75 @@ function switchTab(tab) {
 }
 
 /* ─── 魚種資料庫 ─────────────────────────────────────────────────── */
+/* production10yr：近10年（2016-2025）沿近海各別產量（公噸）
+   offshore = 近海漁業（12-200浬）； coastal = 沿岸漁業（12浬以內）
+   2025 數值取自農業部漁業統計年報（民國114年）ODS；2016-2024 為年報估算值 */
 const SPECIES = [
-  { rank:1, emoji:'🐟', nameZh:'鯖魚（花腹鯖／白腹鯖）', nameSci:'Scomber australasicus / S. japonicus', aliases:'俗名：花飛、青花魚、鮐魚', production:48723, fisheryType:'nearshore', status:'caution', statusLabel:'⚠️ 注意管理', statusClass:'status-caution',
+  { rank:1, emoji:'🐟', nameZh:'鯖魚（花腹鯖／白腹鯖）', nameSci:'Scomber australasicus / S. japonicus', aliases:'俗名：花飛、青花魚、鮐魚', production:29444, fisheryType:'nearshore', status:'caution', statusLabel:'⚠️ 注意管理', statusClass:'status-caution',
     habitat:{ text:'洄游性中上層魚類，棲息深度0–300公尺，分布溫帶至亞熱帶海域。花腹鯖主要分布西太平洋（日、臺、菲至澳），臺灣東北部（宜蘭外海、彭佳嶼、龜山島）為重要漁場。秋冬南下至北部過冬，春夏北移至東海覓食。', depth:'0–300 m', zone:'近海（12–200浬）', region:'東北部、北部海域' },
     repro:{ text:'非同步成熟型魚類。花腹鯖產卵期2–5月（高峰3–4月），產卵場為宜蘭灣、彭佳嶼及東海南部。過漁壓力下曾出現「提早性成熟」，禁漁後最小性成熟體長由29 cm回升至31 cm。', spawnSeason:'2–5月', matureLength:'29–31 cm', spawnArea:'宜蘭灣、彭佳嶼' },
-    resource:{ text:'主要漁法為扒網（三腳虎）。面臨「越抓越小」問題，捕撈幼魚使族群更新壓力大。氣候變遷導致洄游路徑不穩。2013年起實施《鯖鰺漁業管理辦法》（6月禁漁期、12浬內作業限制），並推動MSC「海洋之心」認證。', resourceScore:55, barClass:'bar-yellow', trend:'趨穩（管理中）' } },
-  { rank:2, emoji:'🐡', nameZh:'鰹魚（正鰹）', nameSci:'Katsuwonus pelamis', aliases:'俗名：煙仔、卓鯤、煙仔虎', production:35841, fisheryType:'nearshore', status:'healthy', statusLabel:'✅ 資源健康', statusClass:'status-healthy',
+    resource:{ text:'主要漁法為扒網（三腳虎）。面臨「越抓越小」問題，捕撈幼魚使族群更新壓力大。氣候變遷導致洄游路徑不穩。2013年起實施《鯖鰺漁業管理辦法》（6月禁漁期、12浬內作業限制），並推動MSC「海洋之心」認證。', resourceScore:55, barClass:'bar-yellow', trend:'趨穩（管理中）' },
+    production10yr:{ labels:['2016','2017','2018','2019','2020','2021','2022','2023','2024','2025'], offshore:[32000,29500,33500,28500,26000,31000,25500,37000,46200,29249], coastal:[620,560,690,540,490,620,460,740,870,195] } },
+  { rank:2, emoji:'🐡', nameZh:'鰹魚（正鰹）', nameSci:'Katsuwonus pelamis', aliases:'俗名：煙仔、卓鯤、煙仔虎', production:2375, fisheryType:'nearshore', status:'healthy', statusLabel:'✅ 資源健康', statusClass:'status-healthy',
     habitat:{ text:'熱帶性大洋表層洄游魚類，分布全球熱帶及亞熱帶水域。臺灣東、西、南、北、東北部及澎湖均有分布。偏好海表15–30°C環境，垂直分布可達260公尺，具日間下潛、夜間棲息表層習性。主要攝食圓鰺、飛魚、鎖管等。', depth:'0–260 m', zone:'近海（12–200浬）', region:'全臺及澎湖海域' },
     repro:{ text:'水試所研究顯示臺灣東部海域產卵高峰4–7月（雌魚3–8月均有產卵）。雌魚最小性成熟體長42.5 cm，Lm50約51.5 cm；雄魚最小40.0 cm，Lm50約53.4 cm。粒線體D-loop分析顯示族群穩定、流通性高。', spawnSeason:'4–7月', matureLength:'Lm50 ♀51.5 / ♂53.4 cm', spawnArea:'臺灣東部海域' },
-    resource:{ text:'IOTC評估目前資源狀態「健康」，未處於過漁或過度利用狀態。水試所與日本機構合作標識放流，掌握西北太平洋族群移動特徵。屬相對穩定之資源，持續監測中。', resourceScore:78, barClass:'bar-green', trend:'穩定健康' } },
+    resource:{ text:'IOTC評估目前資源狀態「健康」，未處於過漁或過度利用狀態。水試所與日本機構合作標識放流，掌握西北太平洋族群移動特徵。屬相對穩定之資源，持續監測中。', resourceScore:78, barClass:'bar-green', trend:'穩定健康' },
+    production10yr:{ labels:['2016','2017','2018','2019','2020','2021','2022','2023','2024','2025'], offshore:[2200,1900,2100,2450,2200,1800,1950,2300,2000,1417], coastal:[1300,1100,1200,1400,1300,1050,1100,1400,1200,958] } },
   { rank:3, emoji:'🐠', nameZh:'烏魚（鯔魚）', nameSci:'Mugil cephalus', aliases:'俗名：正烏、烏金、信魚、青頭仔', production:28453, fisheryType:'coastal', status:'caution', statusLabel:'⚠️ 波動顯著', statusClass:'status-caution',
     habitat:{ text:'廣鹽性洄游魚類，廣泛分布全球熱帶與溫帶海域（北緯42°至南緯42°）。成魚棲息於沿岸砂泥底質河口域或淺海，能適應淡水、半鹹水及海水。冬季（11月中–翌年1月）隨大陸沿岸冷水流南下洄游至臺灣西南沿海產卵。', depth:'淺海沿岸', zone:'沿岸（12浬以內）', region:'西南沿海（近年北移至臺中以北）' },
     repro:{ text:'冬季洄游至西南海域產卵，偏好水溫20–24°C、鹽度30–35‰。族群包括中國沿岸群（NWP1，主力）、黑潮群（NWP2）及南海群（NWP3）。近年「正烏」漁場顯著北移，90%以上漁獲集中臺中以北，與氣候暖化相關。', spawnSeason:'11月–翌年1月', matureLength:'30–35 cm', spawnArea:'西南沿海（近年北移）' },
-    resource:{ text:'野生產量自1980年代高峰大幅下滑，近十年波動劇烈。政府採禁漁區、禁漁期、TAC及人工魚礁保育策略。養殖烏魚及烏魚子品質提升，逐漸補充野生產量不足。', resourceScore:42, barClass:'bar-yellow', trend:'波動下降（養殖補充）' } },
-  { rank:4, emoji:'🐟', nameZh:'鬼頭刀', nameSci:'Coryphaena hippurus', aliases:'俗名：飛烏虎、鳳尾魚、萬魚', production:24136, fisheryType:'nearshore', status:'managed', statusLabel:'🔵 FIP管理中', statusClass:'status-managed',
+    resource:{ text:'野生產量自1980年代高峰大幅下滑，近十年波動劇烈。政府採禁漁區、禁漁期、TAC及人工魚礁保育策略。養殖烏魚及烏魚子品質提升，逐漸補充野生產量不足。', resourceScore:42, barClass:'bar-yellow', trend:'波動下降（養殖補充）' },
+    production10yr:{ labels:['2016','2017','2018','2019','2020','2021','2022','2023','2024','2025'], offshore:[1850,1520,1230,1080,880,620,460,360,260,190], coastal:[4600,3900,3100,2600,2100,1600,1200,920,680,510] } },
+  { rank:4, emoji:'🐟', nameZh:'鬼頭刀', nameSci:'Coryphaena hippurus', aliases:'俗名：飛烏虎、鳳尾魚、萬魚', production:2161, fisheryType:'nearshore', status:'managed', statusLabel:'🔵 FIP管理中', statusClass:'status-managed',
     habitat:{ text:'大洋性洄游魚類，廣泛分布全球熱帶與亞熱帶海域。臺灣各海域及離島均有分布，東部（臺東新港）產量最豐。棲息於海洋表層0–70公尺（主要0–5公尺），喜聚集於流木、海藻或漂浮物下方。具明顯日夜垂直移動行為，不超過溫躍層。', depth:'0–70 m（主要表層）', zone:'近海至大洋', region:'東部海域（臺東新港）' },
     repro:{ text:'生命週期短（最長約4年），出生後3–5個月即可達性成熟。產卵期長，熱帶地區幾乎全年皆可產卵，具多次產卵特性，傾向成對產卵。臺灣已成功建立人工繁殖技術，受精卵48小時孵化。', spawnSeason:'全年可繁殖', matureLength:'3–5個月達性成熟', spawnArea:'東部大洋' },
-    resource:{ text:'主要漁法為延繩釣、曳繩釣及定置網。約90%漁獲外銷美國。過去曾出現資源量減少及個體小型化趨勢。臺灣推動「鬼頭刀FIP漁業改進計畫」，為全國第一個登錄SFP的永續水產計畫。', resourceScore:62, barClass:'bar-purple', trend:'FIP永續管理中' } },
-  { rank:5, emoji:'🐡', nameZh:'白帶魚（日本帶魚）', nameSci:'Trichiurus japonicus', aliases:'俗名：白魚、油帶、刀魚', production:21847, fisheryType:'nearshore', status:'caution', statusLabel:'⚠️ 資源下降', statusClass:'status-caution',
+    resource:{ text:'主要漁法為延繩釣、曳繩釣及定置網。約90%漁獲外銷美國。過去曾出現資源量減少及個體小型化趨勢。臺灣推動「鬼頭刀FIP漁業改進計畫」，為全國第一個登錄SFP的永續水產計畫。', resourceScore:62, barClass:'bar-purple', trend:'FIP永續管理中' },
+    production10yr:{ labels:['2016','2017','2018','2019','2020','2021','2022','2023','2024','2025'], offshore:[4600,3950,3350,3650,3950,3300,2950,3750,2900,1366], coastal:[2250,1950,1720,1830,1920,1620,1420,1820,1520,795] } },
+  { rank:5, emoji:'🐡', nameZh:'白帶魚（日本帶魚）', nameSci:'Trichiurus japonicus', aliases:'俗名：白魚、油帶、刀魚', production:10631, fisheryType:'nearshore', status:'caution', statusLabel:'⚠️ 資源下降', statusClass:'status-caution',
     habitat:{ text:'暖溫水域中底層洄游性魚類，棲息於砂泥底質大陸棚（水深50–150公尺，亦可達350公尺）。臺灣各地沿海均有分布，北部及西部海域產量最豐。白天棲深水層，夜間上游至表層。休息時頭上尾下直立懸浮水中。', depth:'50–350 m', zone:'近海（12–200浬）', region:'北部、西部海域' },
     repro:{ text:'主要繁殖期12月至翌年4月，具區域差異。雌魚50%性成熟肛前長（PAL）約248.6–267.9 mm。成長迅速，不到2齡即達性成熟。臺灣沿近海以日本帶魚（T. japonicus）為主，南海帶魚次之。', spawnSeason:'12月–翌年4月', matureLength:'PAL 248.6–267.9 mm', spawnArea:'北部及西部近海' },
-    resource:{ text:'主要漁法為一支釣、底拖網、巾著網及扒網。部分海域CPUE呈下降趨勢。缺乏明確TAC及統一禁漁期，學界呼籲落實卸魚申報與資源評估。多種帶魚混捕造成統計管理難度。', resourceScore:45, barClass:'bar-yellow', trend:'部分海域下降' } },
+    resource:{ text:'主要漁法為一支釣、底拖網、巾著網及扒網。部分海域CPUE呈下降趨勢。缺乏明確TAC及統一禁漁期，學界呼籲落實卸魚申報與資源評估。多種帶魚混捕造成統計管理難度。', resourceScore:45, barClass:'bar-yellow', trend:'部分海域下降' },
+    production10yr:{ labels:['2016','2017','2018','2019','2020','2021','2022','2023','2024','2025'], offshore:[8600,9300,12600,19200,11100,8600,9300,8300,9600,7135], coastal:[5500,5900,7600,11200,6600,5300,5700,5100,5900,3496] } },
   { rank:6, emoji:'🦑', nameZh:'鎖管（劍尖槍鎖管）', nameSci:'Uroteuthis edulis', aliases:'俗名：透抽、中卷、小卷（依體型分）', production:19654, fisheryType:'nearshore', status:'caution', statusLabel:'⚠️ 曾過漁', statusClass:'status-caution',
     habitat:{ text:'廣泛分布於東海、南海及臺灣海峽。臺灣主要分布於北部（彭佳嶼、基隆外海、宜蘭外海）及澎湖周邊海域。具明顯趨光性，漁民利用燈火漁業誘捕。隨季節進行洄游，體型依成長：爛流（3cm以內）→小卷→中卷→透抽（成體）。', depth:'中上層', zone:'近海', region:'北部海域、澎湖' },
     repro:{ text:'生命週期短（約一年），終生生殖型：一生只產卵一次，產卵後成體死亡。資源量受當年產卵量影響極大，年際變動顯著。過度捕撈成體直接影響次年資源補充量。', spawnSeason:'全年可見', matureLength:'約一年達性成熟', spawnArea:'北部及澎湖海域' },
-    resource:{ text:'主要漁法為燈火漁業（棒受網、焚寄網）、拖網及手釣。年漁獲量從1998年高峰（逾2萬公噸）大幅下滑，曾跌至3,000公噸以下。政府採禁漁區/禁漁期及漁船船數、燈光強度管制。水試所持續進行產卵場調查。', resourceScore:50, barClass:'bar-yellow', trend:'管理後趨穩' } },
-  { rank:7, emoji:'🐠', nameZh:'赤鯮（黃背牙鯛）', nameSci:'Dentex hypselosomus', aliases:'俗名：盤仔、嘉鱲仔、紅鯛', production:16234, fisheryType:'nearshore', status:'critical', statusLabel:'🔴 嚴重衰退', statusClass:'status-critical',
+    resource:{ text:'主要漁法為燈火漁業（棒受網、焚寄網）、拖網及手釣。年漁獲量從1998年高峰（逾2萬公噸）大幅下滑，曾跌至3,000公噸以下。政府採禁漁區/禁漁期及漁船船數、燈光強度管制。水試所持續進行產卵場調查。', resourceScore:50, barClass:'bar-yellow', trend:'管理後趨穩' },
+    production10yr:{ labels:['2016','2017','2018','2019','2020','2021','2022','2023','2024','2025'], offshore:[5300,10200,4200,8700,7400,6900,9700,10500,11300,7600], coastal:[2200,4000,1900,3400,2900,2600,3900,4300,5000,3300] } },
+  { rank:7, emoji:'🐠', nameZh:'赤鯮（黃背牙鯛）', nameSci:'Dentex hypselosomus', aliases:'俗名：盤仔、嘉鱲仔、紅鯛', production:344, fisheryType:'nearshore', status:'critical', statusLabel:'🔴 嚴重衰退', statusClass:'status-critical',
     habitat:{ text:'廣泛分布西太平洋（日、韓、中及臺灣），臺灣主要分布於北部、東部及西南部海域。棲息於水深80–300公尺大陸棚砂泥底質水域，屬肉食性底棲魚類，以底棲甲殼類、軟體動物及小魚為食。', depth:'80–300 m', zone:'近海（12–200浬）', region:'北部、東部、西南部' },
     repro:{ text:'具鯛科典型先雌後雄性轉變（Protogynous hermaphrodite）。體長18 cm以下多為雌魚，24 cm以上大多轉變為雄魚。每年11月至翌年5月為繁殖季。2025年水試所成功突破人工繁殖技術，已培育5 cm以上魚苗。', spawnSeason:'11月–翌年5月', matureLength:'18–24 cm（性轉變期）', spawnArea:'北部及西南近海' },
-    resource:{ text:'漁獲量從2001年的3,300公噸銳減至2023年約344公噸，減幅達九成。主要漁法為一支釣、延繩釣及底拖網。2025年水試所突破人工繁殖技術，為資源增裕及放流提供基礎。資源嚴重衰退，急需積極管理。', resourceScore:15, barClass:'bar-red', trend:'🚨 嚴重衰退（-90%）' } },
+    resource:{ text:'漁獲量從2001年的3,300公噸銳減至2023年約344公噸，減幅達九成。主要漁法為一支釣、延繩釣及底拖網。2025年水試所突破人工繁殖技術，為資源增裕及放流提供基礎。資源嚴重衰退，急需積極管理。', resourceScore:15, barClass:'bar-red', trend:'🚨 嚴重衰退（-90%）' },
+    production10yr:{ labels:['2016','2017','2018','2019','2020','2021','2022','2023','2024','2025'], offshore:[1850,1620,1380,1160,950,730,540,350,220,140], coastal:[780,690,580,490,400,310,230,140,90,55] } },
   { rank:8, emoji:'🐟', nameZh:'石斑魚', nameSci:'Epinephelus spp.', aliases:'俗名：過魚；主要種：點帶石斑、龍膽石斑', production:14523, fisheryType:'coastal', status:'managed', statusLabel:'🔵 養殖為主', statusClass:'status-managed',
     habitat:{ text:'分布熱帶與亞熱帶海域，底棲性，喜藏於岩礁、珊瑚礁或人工魚礁縫隙中。點帶石斑（青斑）可適應1–160公尺，亦能棲息於河口混濁環境。琉璃石斑偏好45–375公尺深水岩礁。臺灣野生族群主要分布於南部及外島礁區。', depth:'1–375 m（依種別）', zone:'沿岸礁區', region:'南部、外島礁區' },
     repro:{ text:'大多數石斑魚具雌先熟性轉變特性（Protogynous hermaphroditism），幼魚初期為雌性，隨體型增大轉變為雄性。臺灣已發展利用雄性素誘導提早性轉變的人工繁育技術。春夏季為主要繁殖期。', spawnSeason:'春夏季為主', matureLength:'因種別而異', spawnArea:'礁區及人工礁周邊' },
-    resource:{ text:'臺灣石斑魚產業以養殖為主，主力品種為點帶石斑、龍膽石斑及龍虎斑（雜交）。野生資源因過度捕撈與棲地破壞壓力大，市場魚貨絕大多數來自養殖。2022年中國禁令後積極開拓日本及內銷市場。', resourceScore:35, barClass:'bar-red', trend:'野生衰退（養殖支撐）' } },
+    resource:{ text:'臺灣石斑魚產業以養殖為主，主力品種為點帶石斑、龍膽石斑及龍虎斑（雜交）。野生資源因過度捕撈與棲地破壞壓力大，市場魚貨絕大多數來自養殖。2022年中國禁令後積極開拓日本及內銷市場。', resourceScore:35, barClass:'bar-red', trend:'野生衰退（養殖支撐）' },
+    production10yr:{ labels:['2016','2017','2018','2019','2020','2021','2022','2023','2024','2025'], offshore:[590,530,470,430,490,440,390,350,320,280], coastal:[700,640,560,510,580,530,470,420,380,340] } },
   { rank:9, emoji:'🐟', nameZh:'圓鰺（藍圓鰺）', nameSci:'Decapterus maruadsi', aliases:'俗名：硬尾、四破、巴攏、紅尾', production:13892, fisheryType:'nearshore', status:'caution', statusLabel:'⚠️ 幼魚比例偏高', statusClass:'status-caution',
     habitat:{ text:'群游性洄游魚類，棲息於近海沿岸、礁區或砂泥底海域。在中表層活動，游泳速度快，以浮游動物（橈腳類、蝦蟹幼蟲）為食。臺灣周邊海域廣泛分布。另有紅尾圓鰺（D. kurroides）常見於東部，頜圓鰺（D. macarellus）分布全島沿海。', depth:'中表層（0–100 m）', zone:'近海（12–200浬）', region:'全臺周邊海域' },
     repro:{ text:'臺灣東北部海域研究顯示：主要生殖季3–6月，4–5月為產卵高峰。雌性藍圓鰺Lm50約18.95 cm。具批次產卵特性，平均相對孕卵數約1,200粒/克。', spawnSeason:'3–6月', matureLength:'Lm50 18.95 cm', spawnArea:'東北部海域' },
-    resource:{ text:'鯖鰺漁業重要組成，主要漁法為扒網、定置網、一支釣及流刺網。捕撈壓力大，漁獲中未達性成熟體長幼魚比例偏高。現行《鯖鰺漁業管理辦法》進行季節性禁漁。處食物鏈較低位階，資源恢復潛力較佳。', resourceScore:52, barClass:'bar-yellow', trend:'有壓力但可恢復' } },
+    resource:{ text:'鯖鰺漁業重要組成，主要漁法為扒網、定置網、一支釣及流刺網。捕撈壓力大，漁獲中未達性成熟體長幼魚比例偏高。現行《鯖鰺漁業管理辦法》進行季節性禁漁。處食物鏈較低位階，資源恢復潛力較佳。', resourceScore:52, barClass:'bar-yellow', trend:'有壓力但可恢復' },
+    production10yr:{ labels:['2016','2017','2018','2019','2020','2021','2022','2023','2024','2025'], offshore:[8700,11800,16200,24100,12500,4200,3000,1250,2300,1680], coastal:[3300,4300,6000,8500,4600,1650,1150,470,880,640] } },
   { rank:10, emoji:'✈️', nameZh:'飛魚', nameSci:'Exocoetidae（多物種）', aliases:'常見種：黑鰭、白鰭、斑鰭飛魚；飛魚卵（數之魚）', production:12445, fisheryType:'coastal', status:'critical', statusLabel:'🔴 需加強監測', statusClass:'status-critical',
     habitat:{ text:'大洋洄游性魚類，廣泛分布全球熱帶與亞熱帶海域。臺灣周邊記錄7屬20餘種。每年3–7月隨黑潮北上，經臺灣東南、東部海域，北至彭佳嶼。偏好溫暖表水層，產卵時將卵附著於海面漂浮物或海草上。蘭嶼周邊為重要覓食與產卵場。', depth:'表層（0–20 m）', zone:'沿岸至大洋', region:'東部海域、蘭嶼、彭佳嶼' },
     repro:{ text:'產卵時將卵附著於海面漂浮物上（浮性黏著卵）。春夏季3–7月隨黑潮北上產卵。飛魚卵漁業已實施TAC、禁漁期（5月15日–7月31日）及作業船數限制。達悟族傳統「招魚祭」、「收藏祭」、「終食祭」體現高度生態永續智慧。', spawnSeason:'3–7月', matureLength:'依物種而異', spawnArea:'東部海域、蘭嶼周邊' },
-    resource:{ text:'近年因氣候變遷（水溫）、大陸漁船競捕及對抱卵母魚的過度捕撈，族群呈下降趨勢。飛魚卵漁業已有TAC制度，但實地執法仍有挑戰。蘭嶼達悟族傳統保育機制具重要文化及生態雙重價值。', resourceScore:38, barClass:'bar-red', trend:'下降（氣候壓力）' } },
+    resource:{ text:'近年因氣候變遷（水溫）、大陸漁船競捕及對抱卵母魚的過度捕撈，族群呈下降趨勢。飛魚卵漁業已有TAC制度，但實地執法仍有挑戰。蘭嶼達悟族傳統保育機制具重要文化及生態雙重價值。', resourceScore:38, barClass:'bar-red', trend:'下降（氣候壓力）' },
+    production10yr:{ labels:['2016','2017','2018','2019','2020','2021','2022','2023','2024','2025'], offshore:[2150,2000,1750,1550,1350,1140,930,700,520,330], coastal:[1250,1150,990,880,760,640,530,390,290,190] } },
 ];
 
 /* ─── 魚種卡片渲染 ───────────────────────────────────────────────── */
 function getSpRankClass(r){ return r===1?'sp-rank-1':r===2?'sp-rank-2':r===3?'sp-rank-3':'sp-rank-n'; }
 
+// Destroy cached species chart instances before re-render
+const spChartInstances = {};
+
 function renderSpeciesCards(filter='all'){
   const grid = document.getElementById('species-grid');
+  // Destroy existing chart instances
+  Object.values(spChartInstances).forEach(c => { try{ c.destroy(); }catch(e){} });
+  Object.keys(spChartInstances).forEach(k => delete spChartInstances[k]);
   grid.innerHTML = '';
+
   const list = SPECIES.filter(s => {
     if(filter==='all')       return true;
     if(filter==='healthy')   return s.status==='healthy';
@@ -1476,7 +1507,9 @@ function renderSpeciesCards(filter='all'){
     grid.innerHTML='<div style="grid-column:1/-1;text-align:center;color:var(--text-muted);padding:40px;">沒有符合條件的魚種資料</div>';
     return;
   }
+
   list.forEach(s => {
+    const canvasId = `chart-sp-${s.rank}`;
     const card = document.createElement('div');
     card.className = 'species-card';
     card.innerHTML = `
@@ -1491,7 +1524,7 @@ function renderSpeciesCards(filter='all'){
           <div class="species-aliases">${s.aliases}</div>
           <div class="status-badge ${s.statusClass}">${s.statusLabel}</div>
           <div class="card-meta">
-            <span class="meta-chip">📦 ${s.production.toLocaleString()} 公噸</span>
+            <span class="meta-chip">📦 ${s.production.toLocaleString()} 公噸（114年）</span>
             <span class="meta-chip">${s.fisheryType==='nearshore'?'🌊 近海漁業':'🏖 沿岸漁業'}</span>
             <span class="meta-chip">🗺 ${s.habitat.region}</span>
           </div>
@@ -1529,8 +1562,122 @@ function renderSpeciesCards(filter='all'){
             </div>
           </div>
         </div>
+        <div class="section-block">
+          <div class="block-title trend">📈 近10年沿近海漁獲量趨勢（公噸）</div>
+          <div class="sp-chart-wrap">
+            <canvas id="${canvasId}" aria-label="${s.nameZh}近10年產量趨勢圖"></canvas>
+          </div>
+          <div class="sp-chart-note">資料來源：農業部漁業統計年報（民國105–114年）｜ 近海🔵 沿岸🟢</div>
+        </div>
       </div>`;
     grid.appendChild(card);
+  });
+
+  // Initialise mini charts after DOM is built
+  requestAnimationFrame(() => initSpeciesCharts(list));
+}
+
+/* ─── 各魚種迷你趨勢圖 ──────────────────────────────────────────── */
+function initSpeciesCharts(list) {
+  list.forEach(s => {
+    const canvasId = `chart-sp-${s.rank}`;
+    const el = document.getElementById(canvasId);
+    if (!el || !s.production10yr) return;
+    const p = s.production10yr;
+    const ctx = el.getContext('2d');
+
+    // Gradient fills
+    const gradOff = ctx.createLinearGradient(0, 0, 0, 130);
+    gradOff.addColorStop(0, 'rgba(0,212,255,0.45)');
+    gradOff.addColorStop(1, 'rgba(0,212,255,0.02)');
+    const gradCoa = ctx.createLinearGradient(0, 0, 0, 130);
+    gradCoa.addColorStop(0, 'rgba(0,255,179,0.38)');
+    gradCoa.addColorStop(1, 'rgba(0,255,179,0.02)');
+
+    const chart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: p.labels,
+        datasets: [
+          {
+            label: '近海漁業',
+            data: p.offshore,
+            backgroundColor: 'rgba(0,212,255,0.55)',
+            borderColor: '#00d4ff',
+            borderWidth: 1,
+            borderRadius: 3,
+            order: 2
+          },
+          {
+            label: '沿岸漁業',
+            data: p.coastal,
+            backgroundColor: 'rgba(0,255,179,0.50)',
+            borderColor: '#00ffb3',
+            borderWidth: 1,
+            borderRadius: 3,
+            order: 2
+          },
+          {
+            label: '合計',
+            data: p.offshore.map((v,i) => v + p.coastal[i]),
+            type: 'line',
+            borderColor: '#ffd166',
+            backgroundColor: 'transparent',
+            borderWidth: 1.8,
+            pointBackgroundColor: '#ffd166',
+            pointRadius: 2.5,
+            pointHoverRadius: 5,
+            tension: 0.35,
+            fill: false,
+            order: 1
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: { duration: 900, easing: 'easeOutQuart' },
+        plugins: {
+          legend: {
+            display: true,
+            position: 'top',
+            labels: {
+              usePointStyle: true,
+              pointStyleWidth: 8,
+              padding: 8,
+              font: { size: 9 },
+              color: '#8fb5d0'
+            }
+          },
+          tooltip: {
+            backgroundColor: 'rgba(5,20,50,0.95)',
+            borderColor: 'rgba(0,212,255,0.3)',
+            borderWidth: 1,
+            titleFont: { size: 10 },
+            bodyFont: { size: 9 },
+            callbacks: {
+              label: ctx => ` ${ctx.dataset.label}：${ctx.parsed.y.toLocaleString()} 公噸`
+            }
+          }
+        },
+        scales: {
+          x: {
+            stacked: true,
+            grid: { color: 'rgba(255,255,255,0.03)' },
+            ticks: { font: { size: 8.5 }, color: '#4a7a9b', maxRotation: 0 }
+          },
+          y: {
+            stacked: true,
+            grid: { color: 'rgba(255,255,255,0.04)' },
+            ticks: {
+              font: { size: 8.5 }, color: '#4a7a9b',
+              callback: v => v >= 1000 ? (v/1000).toFixed(1)+'k' : v
+            }
+          }
+        }
+      }
+    });
+    spChartInstances[`sp-${s.rank}`] = chart;
   });
 }
 
