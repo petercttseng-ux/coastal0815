@@ -484,6 +484,7 @@
       </div>
     </div>
     <div class="header-meta">
+      <a href="species.html" style="padding:7px 16px;border-radius:20px;font-size:0.76rem;font-weight:600;background:rgba(0,212,255,0.1);border:1px solid rgba(0,212,255,0.3);color:var(--accent-cyan);text-decoration:none;transition:all 0.3s ease;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(0,212,255,0.1)'">🐟 魚種資源詳細頁</a>
       <div class="update-status">
         <div class="pulse-dot" id="live-dot"></div>
         <span id="last-update-text">數據同步中…</span>
@@ -679,6 +680,7 @@
     <div class="glass-card table-panel">
       <div class="chart-title">
         <span>🐟 主要漁獲魚種排名（113年）</span>
+        <a href="species.html" style="font-size:0.7rem;color:var(--accent-cyan);text-decoration:none;padding:3px 10px;border:1px solid rgba(0,212,255,0.3);border-radius:10px;background:rgba(0,212,255,0.08);">詳細資料 →</a>
       </div>
       <table class="data-table" id="species-table" aria-label="主要漁獲魚種排名表">
         <thead>
@@ -686,7 +688,7 @@
             <th>排名</th>
             <th>魚種</th>
             <th>產量(公噸)</th>
-            <th>佔比</th>
+            <th>資源狀況</th>
           </tr>
         </thead>
         <tbody id="species-tbody"></tbody>
@@ -796,14 +798,16 @@ const STATIC_DATA = {
 
   /* 主要漁獲魚種（113年） */
   topSpecies: [
-    { name:'鯖魚（花飛）', production: 48723, type:'近海', emoji:'🐟' },
-    { name:'鰹魚',         production: 35841, type:'近海', emoji:'🐡' },
-    { name:'烏魚',         production: 28453, type:'沿岸', emoji:'🐠' },
-    { name:'鬼頭刀',       production: 24136, type:'近海', emoji:'🐟' },
-    { name:'白帶魚',       production: 21847, type:'近海', emoji:'🐡' },
-    { name:'鎖管（透抽）', production: 19654, type:'近海', emoji:'🦑' },
-    { name:'赤鯮',         production: 16234, type:'近海', emoji:'🐠' },
-    { name:'石斑魚',       production: 14523, type:'沿岸', emoji:'🐟' },
+    { name:'鯖魚（花飛）', production: 48723, type:'近海', emoji:'🐟', status:'caution',  statusText:'注意管理' },
+    { name:'鰹魚（正鰹）', production: 35841, type:'近海', emoji:'🐡', status:'healthy',  statusText:'資源健康' },
+    { name:'烏魚（正烏）', production: 28453, type:'沿岸', emoji:'🐠', status:'caution',  statusText:'波動顯著' },
+    { name:'鬼頭刀',       production: 24136, type:'近海', emoji:'🐟', status:'managed',  statusText:'FIP管理' },
+    { name:'白帶魚',       production: 21847, type:'近海', emoji:'🐡', status:'caution',  statusText:'資源下降' },
+    { name:'鎖管（透抽）', production: 19654, type:'近海', emoji:'🦑', status:'caution',  statusText:'曾過漁'  },
+    { name:'赤鯮',         production: 16234, type:'近海', emoji:'🐠', status:'critical', statusText:'嚴重衰退' },
+    { name:'石斑魚',       production: 14523, type:'沿岸', emoji:'🐟', status:'managed',  statusText:'養殖為主' },
+    { name:'圓鰺（硬尾）', production: 13892, type:'近海', emoji:'🐟', status:'caution',  statusText:'幼魚偏高' },
+    { name:'飛魚',         production: 12445, type:'沿岸', emoji:'✈️', status:'critical', statusText:'需加強監測'},
   ],
 
   /* 政策動態新聞 */
@@ -1137,17 +1141,25 @@ function initCharts() {
 function renderSpeciesTable() {
   const tbody = document.getElementById('species-tbody');
   const maxVal = STATIC_DATA.topSpecies[0].production;
+  const statusStyle = { healthy:'color:#22c55e', caution:'color:#ffd166', critical:'color:#ff6b6b', managed:'color:#8b5cf6' };
   tbody.innerHTML = STATIC_DATA.topSpecies.map((s,i) => {
     const pct = ((s.production / maxVal) * 100).toFixed(0);
     const rankClass = i===0 ? 'rank-1' : i===1 ? 'rank-2' : i===2 ? 'rank-3' : 'rank-n';
+    const statusIcon = { healthy:'✅', caution:'⚠️', critical:'🔴', managed:'🔵' };
+    const barColor = { healthy:'background:linear-gradient(90deg,#22c55e,#00ffb3)',
+                       caution:'background:linear-gradient(90deg,#f59e0b,#ffd166)',
+                       critical:'background:linear-gradient(90deg,#ef4444,#ff6b6b)',
+                       managed:'background:linear-gradient(90deg,#8b5cf6,#a78bfa)' };
     return `
-      <tr>
+      <tr onclick="window.location='species.html'" style="cursor:pointer;">
         <td><span class="rank-badge ${rankClass}">${i+1}</span></td>
-        <td>${s.emoji} ${s.name}</td>
+        <td>${s.emoji} ${s.name}<br><small style="font-size:0.65rem;color:var(--text-muted)">${s.type}漁業</small></td>
         <td>${s.production.toLocaleString()}</td>
         <td>
-          <div style="font-size:0.7rem;color:var(--text-muted)">${((s.production / 894863)*100).toFixed(1)}%</div>
-          <div class="bar-mini" style="width:${pct}%"></div>
+          <div style="font-size:0.68rem;${statusStyle[s.status]};font-weight:600;margin-bottom:2px">${statusIcon[s.status]} ${s.statusText}</div>
+          <div style="height:4px;border-radius:2px;background:rgba(255,255,255,0.05);overflow:hidden">
+            <div style="height:100%;border-radius:2px;width:${pct}%;${barColor[s.status]}"></div>
+          </div>
         </td>
       </tr>`;
   }).join('');
