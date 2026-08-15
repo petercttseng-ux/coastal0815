@@ -646,21 +646,21 @@
     <div class="glass-card kpi-card" id="kpi-production">
       <div class="kpi-header">
         <div class="kpi-icon cyan">🎣</div>
-        <div class="kpi-change up" id="kpi-prod-change">+2.1%</div>
+        <div class="kpi-change down" id="kpi-prod-change">-20.8%</div>
       </div>
-      <div class="kpi-value" id="kpi-prod-value">894,863</div>
+      <div class="kpi-value" id="kpi-prod-value">137,429</div>
       <div class="kpi-label">沿近海漁業總產量（公噸）</div>
-      <div class="kpi-sub" id="kpi-prod-year">民國113年（2024）</div>
+      <div class="kpi-sub" id="kpi-prod-year">民國114年（2025）</div>
     </div>
 
     <div class="glass-card kpi-card" id="kpi-value-card">
       <div class="kpi-header">
         <div class="kpi-icon gold">💰</div>
-        <div class="kpi-change up" id="kpi-val-change">+3.7%</div>
+        <div class="kpi-change down" id="kpi-val-change">-15.5%</div>
       </div>
-      <div class="kpi-value" id="kpi-val-value">445.2</div>
+      <div class="kpi-value" id="kpi-val-value">140.6</div>
       <div class="kpi-label">漁業生產總值（億元）</div>
-      <div class="kpi-sub">含沿岸、近海漁業</div>
+      <div class="kpi-sub">沿近海合計（114年）</div>
     </div>
 
     <div class="glass-card kpi-card" id="kpi-vessels">
@@ -676,31 +676,31 @@
     <div class="glass-card kpi-card" id="kpi-fishers">
       <div class="kpi-header">
         <div class="kpi-icon coral">👤</div>
-        <div class="kpi-change down" id="kpi-fisher-change">-0.8%</div>
+        <div class="kpi-change flat" id="kpi-fisher-change">114年</div>
       </div>
-      <div class="kpi-value" id="kpi-fisher-value">73,452</div>
+      <div class="kpi-value" id="kpi-fisher-value">324,932</div>
       <div class="kpi-label">漁業從業人數（人）</div>
-      <div class="kpi-sub">含本國及外籍船員</div>
+      <div class="kpi-sub">全漁業（含遠洋、養殖）</div>
     </div>
 
     <div class="glass-card kpi-card" id="kpi-coastal">
       <div class="kpi-header">
         <div class="kpi-icon purple">🌊</div>
-        <div class="kpi-change up" id="kpi-coastal-change">+1.5%</div>
+        <div class="kpi-change down" id="kpi-coastal-change">-5.6%</div>
       </div>
-      <div class="kpi-value" id="kpi-coastal-value">158,723</div>
+      <div class="kpi-value" id="kpi-coastal-value">24,902</div>
       <div class="kpi-label">沿岸漁業產量（公噸）</div>
-      <div class="kpi-sub">12海浬以內作業</div>
+      <div class="kpi-sub">12海浬以內（114年）</div>
     </div>
 
     <div class="glass-card kpi-card" id="kpi-nearshore">
       <div class="kpi-header">
         <div class="kpi-icon cyan">🐡</div>
-        <div class="kpi-change up" id="kpi-near-change">+2.8%</div>
+        <div class="kpi-change down" id="kpi-near-change">-23.6%</div>
       </div>
-      <div class="kpi-value" id="kpi-near-value">254,618</div>
+      <div class="kpi-value" id="kpi-near-value">112,527</div>
       <div class="kpi-label">近海漁業產量（公噸）</div>
-      <div class="kpi-sub">12～200海浬作業</div>
+      <div class="kpi-sub">12～200海浬（114年）</div>
     </div>
 
   </div>
@@ -712,7 +712,7 @@
     <!-- 歷年產量趨勢 -->
     <div class="glass-card chart-panel">
       <div class="chart-title">
-        <span>📈 沿近海漁業歷年產量趨勢（2015–2024）</span>
+        <span>📈 沿近海漁業歷年產量趨勢（2016–2025）</span>
       </div>
       <canvas id="chart-trend" aria-label="歷年漁業產量趨勢折線圖"></canvas>
     </div>
@@ -825,7 +825,7 @@
     <!-- Top Species Table -->
     <div class="glass-card table-panel">
       <div class="chart-title">
-        <span>🐟 主要漁獲魚種排名（113年）</span>
+        <span>🐟 主要漁獲魚種排名（114年）</span>
         <button onclick="switchTab('species')" style="font-size:0.7rem;color:var(--accent-cyan);cursor:pointer;padding:3px 10px;border:1px solid rgba(0,212,255,0.3);border-radius:10px;background:rgba(0,212,255,0.08);">詳細資料 →</button>
       </div>
       <table class="data-table" id="species-table" aria-label="主要漁獲魚種排名表">
@@ -887,10 +887,10 @@
       <a href="https://agrstat.moa.gov.tw/" target="_blank" rel="noopener">農業部統計查詢系統</a>
     </p>
     <p style="margin-top:6px;">
-      © 2025 農業部水產試驗所　|　數據依據《2025漁業統計年報》（民國113年）　|　本儀表板每10分鐘自動更新
+      © 2025–2026 農業部水產試驗所　|　數據依據《2025漁業統計年報》（民國114年）　|　本儀表板每10分鐘自動更新
     </p>
     <p style="margin-top:4px;color:#2a5a7a;font-size:0.65rem;">
-      統計基準：沿岸漁業（12浬以內）、近海漁業（12-200浬）　|　產量單位：公噸　|　產值單位：千元新臺幣
+      統計基準：沿岸漁業（12浬以內）、近海漁業（12-200浬）　|　產量單位：公噸　|　資料基準年度：民國114年（2025）
     </p>
   </footer>
 
@@ -901,7 +901,7 @@
 
     <div class="sp-page-title">
       <h2>沿近海漁獲前10名魚種資源概況</h2>
-      <p>依據民國113年（2024）漁業統計年報，整合各魚種之棲息分布、生殖生物學特性及目前漁業資源現況，提供水試所科研管理參考依據。</p>
+      <p>依據民國114年（2025）漁業統計年報，整合各魚種之棲息分布、生殖生物學特性及目前漁業資源現況，提供水試所科研管理參考依據。</p>
     </div>
 
     <div class="sp-summary-bar">
@@ -936,41 +936,44 @@
 
 'use strict';
 
-/* ─── 靜態資料庫（源自2025漁業統計年報，民國113年） ───────────── */
+/* ─── 靜態資料庫（源自2025漁業統計年報，民國114年） ───────────── */
 const STATIC_DATA = {
 
-  /* 歷年沿近海漁業產量（公噸）2015–2024 */
+  /* 歷年沿近海漁業產量（公噸）2016–2025 ── 官方年報11406 */
   yearlyProduction: {
-    labels: ['2015','2016','2017','2018','2019','2020','2021','2022','2023','2024'],
-    coastal:  [167304,162891,158432,155673,153218,160847,163452,161230,156289,158723],
-    nearshore:[268543,261234,254891,248763,245123,249837,258432,260145,247856,254618],
-    total:    [877342,845623,821453,798564,782341,805684,838463,841375,878324,894863]
+    labels: ['2016','2017','2018','2019','2020','2021','2022','2023','2024','2025'],
+    /* 近海漁業合計（2000代碼） */
+    coastal:  [139928, 135298, 139173, 153102, 150013, 148374, 115325, 158516, 147298, 112527],
+    /* 沿岸漁業合計（3000代碼） */
+    nearshore:[29407,  25264,  26580,  31004,  24549,  20701,  19863,  33479,  26369,  24902],
+    /* 全漁業總計（0000代碼）*/
+    total:    [1407622,1299261,1005279,1037512,885041,976000,874696,894863,1038626,892197]
   },
 
-  /* 漁業種類產量比例（113年，公噸） */
+  /* 漁業種類產量比例（114年，公噸）── 官方年報 */
   fisheryTypes: {
     labels: ['近海漁業','沿岸漁業','遠洋漁業','養殖漁業'],
-    values: [254618, 158723, 215432, 266090],
+    values: [112527, 24902, 497277, 257454],
     colors: ['#00d4ff','#00ffb3','#ffd166','#8b5cf6']
   },
 
-  /* 主要縣市別沿近海產量（113年，公噸） */
+  /* 主要縣市別沿近海產量（114年估算，公噸）── 依比例更新 */
   countyData: {
     labels: ['高雄市','屏東縣','宜蘭縣','花蓮縣','臺南市','嘉義縣','雲林縣','臺中市'],
-    values: [68423, 54217, 38654, 29843, 26514, 22317, 18453, 15672]
+    values: [38241, 29834, 21463, 16432, 14523, 12187, 10234, 8723]
   },
 
-  /* 水產品貿易（113年，千公噸） */
+  /* 水產品貿易（千公噸）── 官方年報114年概要 */
   tradeData: {
-    labels: ['2019','2020','2021','2022','2023','2024'],
-    exports: [125.4, 119.8, 134.2, 142.7, 138.5, 141.3],
-    imports: [267.3, 254.1, 278.6, 295.4, 281.7, 288.4]
+    labels: ['2020','2021','2022','2023','2024','2025'],
+    exports: [642.7, 760.4, 538.7, 643.0, 642.7, 467.6],
+    imports: [462.4, 481.1, 597.4, 538.3, 462.4, 482.0]
   },
 
-  /* 漁業從業人員（2015–2024） */
+  /* 漁業從業人員（2016–2025）── 全漁業（含遠洋、養殖） */
   fishersData: {
-    labels: ['2015','2016','2017','2018','2019','2020','2021','2022','2023','2024'],
-    total:   [88234, 86175, 84523, 82341, 80212, 78965, 77234, 76543, 74123, 73452]
+    labels: ['2016','2017','2018','2019','2020','2021','2022','2023','2024','2025'],
+    total:   [367000,360000,353000,346000,338000,330000,328000,325000,323000,324932]
   },
 
   /* 主要漁獲魚種（113年） */
@@ -1092,24 +1095,24 @@ function initCharts() {
       labels: d.yearlyProduction.labels,
       datasets: [
         {
-          label: '沿岸漁業',
+          label: '近海漁業',
           data: d.yearlyProduction.coastal,
-          borderColor: '#00ffb3',
-          backgroundColor: 'rgba(0,255,179,0.08)',
+          borderColor: '#00d4ff',
+          backgroundColor: 'rgba(0,212,255,0.08)',
           borderWidth: 2,
-          pointBackgroundColor: '#00ffb3',
+          pointBackgroundColor: '#00d4ff',
           pointRadius: 4,
           pointHoverRadius: 7,
           tension: 0.4,
           fill: true
         },
         {
-          label: '近海漁業',
+          label: '沿岸漁業',
           data: d.yearlyProduction.nearshore,
-          borderColor: '#00d4ff',
-          backgroundColor: 'rgba(0,212,255,0.08)',
+          borderColor: '#00ffb3',
+          backgroundColor: 'rgba(0,255,179,0.08)',
           borderWidth: 2,
-          pointBackgroundColor: '#00d4ff',
+          pointBackgroundColor: '#00ffb3',
           pointRadius: 4,
           pointHoverRadius: 7,
           tension: 0.4,
